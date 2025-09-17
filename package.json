@@ -1,0 +1,43 @@
+{
+  "name": "chordjs",
+  "version": "0.1.0",
+  "description": "A Discord.js framework built with TypeScript",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "engines": {
+    "node": ">=16.11.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node --esm src/index.ts",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "discord",
+    "discord.js",
+    "framework",
+    "typescript"
+  ],
+  "author": "Dan",
+  "license": "MIT",
+  "peerDependencies": {
+    "discord.js": "^14.22.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2",
+    "discord.js": "^14.22.1"
+  }
+}
