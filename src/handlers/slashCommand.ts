@@ -13,6 +13,14 @@ import {
   slashCommandTemplate,
 } from "../template/slashCommand.template.js";
 import { glob } from "glob";
+import { fileURLToPath } from "url";
+
+/**
+ * @internal
+ * Utility versions of __dirname and __filename for ESM compatibility.
+ */
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Manager for handling Discord slash commands.
