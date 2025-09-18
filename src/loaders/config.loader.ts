@@ -1,7 +1,7 @@
 import path from "path";
 import fs from "fs";
 import { pathToFileURL } from "url";
-import type { ChordJSConfig } from "../template/chordjs.config.js";
+import type { ChordJSConfig } from "../config/chordjs.config.js";
 
 export async function loadConfig(): Promise<ChordJSConfig> {
   const fullPath = path.resolve(process.cwd(), "chordjs.config.js");

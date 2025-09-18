@@ -5,7 +5,6 @@ import { Client, Interaction, SlashCommandBuilder } from "discord.js";
  * Includes command data, permission level, and execution logic.
  *
  * @property data - The SlashCommandBuilder instance defining the command structure.
- * @property permission - The permission level required to execute the command. Can be "Everyone", "Admin", or "User".
  * @property execute - The asynchronous function to be called when the command is invoked. Receives the interaction and client as parameters.
  * @example
  * ```typescript
@@ -14,7 +13,6 @@ import { Client, Interaction, SlashCommandBuilder } from "discord.js";
  *   data: new SlashCommandBuilder()
  *     .setName("example")
  *     .setDescription("An example command"),
- *   permission: "Everyone",
  *   execute: async (interaction: Interaction, client: Client) => {
  *      if (!interaction.isCommand()) return;
  *      await interaction.reply("This is an example command!");
@@ -23,7 +21,7 @@ import { Client, Interaction, SlashCommandBuilder } from "discord.js";
  * ```
  */
 export interface slashCommandTemplate {
+    tag: "bot" | "owner" | "user";
     data: SlashCommandBuilder;
-    permission: "Everyone" | "Admin" | "User";
     execute: (interaction: Interaction, client: Client) => Promise<void>;
 }

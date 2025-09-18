@@ -72,6 +72,9 @@ class SlashCommandManager<
 
     const files = await glob(this.slashCommandDirPath, { cwd: path.resolve(__dirname, "..") });
 
+    console.log(`Found ${files.length} command files.`);
+    console.log(files);
+
     for (const file of files) {
       const filePath = path.resolve(file);
       const fileUrl = `file://${filePath}`;

@@ -8,59 +8,81 @@ ChordJS is a framework built on top of Discord.js. This framework was created wi
 
 - Direct from GitHub
 
-    ```js
-    npm i https://github.com/Danang-Bahtiar/ChordJS.git
-    ```
+  ```js
+  npm i https://github.com/Danang-Bahtiar/ChordJS.git
+  ```
 
 - From NPM Registry
 
-    ```js
-    npm i chordjs
-    ```
+  ```js
+  npm i chordjs
+  ```
 
 ## Usage
 
 1. Create `chordjs.config.js` in the project root:
 
-    ```js
-    // example chordjs.config.js
-    import { defineConfig } from "chordjs";
-    import { GatewayIntentBits } from "discord.js";
+   ```js
+   // example chordjs.config.js
+   import { defineConfig } from "chordjs";
+   import { GatewayIntentBits } from "discord.js";
 
-    const config = defineConfig({
+   const config = defineConfig({
         core: {
-            intents: [GatewayIntentBits.Guilds],
+            intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
             clientId: "your-client-id",
             discordToken: "your-discord-token",
             ownerId: "your-bot-owner-id-or-your-user-id"
         },
-        test: {
-            // If provided, slash commands will only register to this guild (fast updates).
-            // Otherwise, they will register globally (slower updates).
-            // if not provided, slash commands will only loaded and not registered on bot creation.
-            guildId: "your-guild-id"
+        development: {
+            developmentMode: true;
+            developmentGuildId?: "your-guild-id";
+        },
+        slashCommand: {
+            useDefaultHandler: true,
+            customDirPath: "./src/slashCommands",
+            guilds: ["guild-id-1", "guild-id-2"]
+        },
+        event: {
+            useDefaultHandler: true,
+            customDirPath: "./src/events"
         },
         custom: {
-            // By default, ChordJS adds a built-in interactionCreate handler
-            // that processes slash commands. 
-            // Set this to false if you want to handle interactionCreate yourself.
             useDefaultInteractionEvent: true,
-
-            slashCommandDirPath: "./custom/slashCommands",
-            eventDirPath: "./custom/events"
         },
-        handlers: [
-            { name: "customHandler", handlerInstance: new CustomHandler() }
-        ]
     });
 
-    export default config;
-    ```
+   export default config;
+   ```
 
 2. `index.js`
-    ```js
-    import { ChordJS } from "chordjs";
 
-    const bot = ChordJS.create();
-    bot.login();
-    ```
+   ```js
+   import { ChordJS } from "chordjs";
+
+   const bot = ChordJS.create();
+   bot.login();
+   ```
+
+3. Registering SlashCommand (if didn't provide guildId)
+
+   ```js
+   // call the following if you didnt provide guildId in the config.
+   // if you didnt call this, your bot have no slashCommand.
+   bot.useHandler("slashCommand", "registerCommands");
+   ```
+
+4. Creating SlashCommand
+
+   ```js
+   // src/command/ping.js
+   import { ChordJS } from "chordjs";
+   import { SlashCommandBuilder } from "discord.js";
+
+   export default ChordJS.SlashCommand({
+     data: new SlashCommandBuilder().setName("ping").setDescription("Pong!!"),
+     execute: async (client, interaction) => {
+       //your logic here
+     },
+   });
+   ```
