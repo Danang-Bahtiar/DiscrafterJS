@@ -69,11 +69,9 @@ class SlashCommandManager<
   };
 
   public loadCommands = async () => {
-    console.log(
-      `Loading slash commands from path: ${this.slashCommandDirPath}`
-    );
-
     const files = await glob(this.slashCommandDirPath);
+
+    console.log(files);
 
     for (const file of files) {
       const fileUrl = `file://${file.replace(/\\/g, "/")}`;

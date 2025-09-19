@@ -92,7 +92,9 @@ class ChordJS {
         config.core.clientId,
         config.core.discordToken
       );
+
       this.HandlerCollection.set("slashCommand", slashCommandManager);
+      
       console.log("[HND] Loaded handler: slashCommand");
     }
 
