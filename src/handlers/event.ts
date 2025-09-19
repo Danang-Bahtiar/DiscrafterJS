@@ -30,9 +30,7 @@ class EventManager {
 
     for (const file of files) {
       const filePath = `file://${file.replace(/\\/g, "/")}`;
-      const eventModule = await import(
-        `file://${filePath}?update=${Date.now()}`
-      );
+      const eventModule = await import(`${filePath}?update=${Date.now()}`); // Removed the extra 'file://'
       const event = eventModule.default;
 
       if (!event?.name || typeof event?.execute !== "function") {
