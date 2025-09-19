@@ -23,11 +23,13 @@ class EventManager {
    * @param client - Discord client instance.
    */
   public init = async (eventDirPath: string, client: Client) => {
-    const eventDir = `${eventDirPath}/**/*.{ts,js}`;
-    const files = await glob(eventDir, { cwd: path.resolve(__dirname, "..") });
+    const eventDir = path
+      .join(eventDirPath, "/**/*.{ts,js}")
+      .replace(/\\/g, "/");
+    const files = await glob(eventDir);
 
     for (const file of files) {
-      const filePath = path.resolve(file);
+      const filePath = `file://${file.replace(/\\/g, "/")}`;
       const eventModule = await import(
         `file://${filePath}?update=${Date.now()}`
       );

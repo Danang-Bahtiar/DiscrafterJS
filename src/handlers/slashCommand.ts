@@ -75,9 +75,6 @@ class SlashCommandManager<
 
     const files = await glob(this.slashCommandDirPath);
 
-    console.log(`Found ${files.length} command files.`);
-    console.log(files);
-
     for (const file of files) {
       const fileUrl = `file://${file.replace(/\\/g, "/")}`;
       const commandModule = await import(`${fileUrl}?update=${Date.now()}`);
@@ -125,30 +122,9 @@ class SlashCommandManager<
     return commands;
   };
 
-  public useCommand = async (
-    commandName: string,
-    interaction: Interaction,
-    client: Client
-  ): Promise<void> => {
-    const command = this.cacheCommand.get(commandName);
-    if (!command) {
-      throw new Error(`Command with name ${commandName} not found in cache.`);
-    }
-
-    try {
-      await command.execute(interaction, client);
-    } catch (error) {
-      console.error(
-        `An error occurred while executing command "${commandName}":`,
-        error
-      );
-      // You could also add logic to send a user-friendly error message back to Discord
-    }
-  };
-
   public listCommands = () => {
     return this.cacheCommand.map((cmd) => cmd.data.name);
-  }
+  };
 }
 
 export default SlashCommandManager;

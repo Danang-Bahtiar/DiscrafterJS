@@ -7,6 +7,19 @@ import SlashCommandManager from "../handlers/slashCommand.js";
 import EventManager from "../handlers/event.js";
 import path from "path";
 
+/**
+ * Main ChordJS class for managing Discord bot functionalities.
+ * @class ChordJS
+ * @property {Client} client - Discord.js Client instance.
+ * @property {string} discordToken - Token for authenticating the bot with Discord.
+ * @property {Collection<string, any>} HandlerCollection - Collection of various handlers (e.g., slash commands, events).
+ * @method static create - Creates and initializes a ChordJS instance based on the provided configuration.
+ * @method static SlashCommand - Defines a slash command configuration.
+ * @method static Event - Defines an event configuration.
+ * @method getClient - Retrieves the Discord.js Client instance.
+ * @method login - Logs the bot into Discord using the provided token.
+ *
+ */
 class ChordJS {
   private client!: Client;
   private discordToken!: string;
@@ -14,6 +27,15 @@ class ChordJS {
 
   //============================= Static Methods ==============================//
 
+  /**
+   * Creates and initializes a ChordJS instance based on the provided configuration.
+   * @returns A promise that resolves to an instance of ChordJS after loading the configuration and setting up handlers.
+   * @example
+   * ```ts
+   * import { ChordJS } from "chordjs";
+   * const bot = await ChordJS.create();
+   * ```
+   */
   static async create() {
     const config: ChordJSConfig = await loadConfig();
     const instance = new ChordJS();
@@ -25,13 +47,23 @@ class ChordJS {
     return instance;
   }
 
-  // static Event(config: eventTemplate): eventTemplate {
-  //   if (!config.name || !config.execute) {
-  //     throw new Error("Event must have 'name' and 'execute' fields.");
-  //   }
-  //   return config;
-  // }
+  /**
+   * Defines and returns an event configuration object.
+   * @param config - Configuration object for defining an event.
+   * @returns
+   */
+  static Event(config: eventTemplate): eventTemplate {
+    if (!config.name || !config.execute) {
+      throw new Error("Event must have 'name' and 'execute' fields.");
+    }
+    return config;
+  }
 
+  /**
+   * Defines and returns a slash command configuration object.
+   * @param config - Configuration object for defining a slash command.
+   * @returns
+   */
   static SlashCommand<T extends slashCommandTemplate>(config: T): T {
     if (!config.data || !config.execute) {
       throw new Error("SlashCommand must have 'data' and 'execute' fields.");
@@ -50,10 +82,9 @@ class ChordJS {
     // SlashCommand
     if (config.slashCommand.useDefaultHandler) {
       const slashCommandManager = new SlashCommandManager();
-      // Resolve the absolute path from the project's root.
       const commandsPath = path.resolve(
         process.cwd(),
-        config.slashCommand.customDirPath ?? "./src/slashCommands"
+        config.slashCommand.customDirPath ?? "./src/commands"
       );
 
       await slashCommandManager.init(
@@ -128,23 +159,32 @@ class ChordJS {
       });
     }
 
-    // if (config.event.useDefaultHandler) {
-    //   const eventManager = new EventManager();
-    //   await eventManager.init(
-    //     config.event.customDirPath ?? "./src/events",
-    //     this.client
-    //   );
-    //   this.HandlerCollection.set("event", eventManager);
-    //   console.log("[HND] Loaded handler: event");
-    // }
+    if (config.event.useDefaultHandler) {
+      const eventManager = new EventManager();
+      const eventsPath = path.resolve(
+        process.cwd(),
+        config.event.customDirPath ?? "./src/events"
+      );
+      await eventManager.init(eventsPath, this.client);
+      this.HandlerCollection.set("event", eventManager);
+      console.log("[HND] Loaded handler: event");
+    }
   }
 
   //============================= Public Methods ==============================//
 
+  /**
+   * Retrieves the Discord.js Client instance.
+   * @returns The Discord.js Client instance.
+   */
   public getClient() {
     return this.client;
   }
 
+  /**
+   * Logs the bot into Discord using the provided token.
+   * Use after setting up the ChordJS instance using `ChordJS.create()`.
+   */
   public login() {
     try {
       this.client.login(this.discordToken);
@@ -155,8 +195,6 @@ class ChordJS {
       console.error("Error logging in:", error);
     }
   }
-
-  
 }
 
 export default ChordJS;
