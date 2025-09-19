@@ -9,9 +9,7 @@ import {
   SlashCommandBuilder,
 } from "discord.js";
 import path from "path";
-import {
-  slashCommandTemplate,
-} from "../template/slashCommand.template.js";
+import { slashCommandTemplate } from "../template/slashCommand.template.js";
 import { glob } from "glob";
 import { fileURLToPath } from "url";
 
@@ -55,7 +53,11 @@ class SlashCommandManager<
     this.cacheCommand = new Collection();
   }
 
-  public init = async (slashCommandDirPath: string, clientId: string, discordToken: string) => {
+  public init = async (
+    slashCommandDirPath: string,
+    clientId: string,
+    discordToken: string
+  ) => {
     // REST client setup
     this.rest = new REST({ version: "10" }).setToken(discordToken);
 
@@ -64,13 +66,21 @@ class SlashCommandManager<
 
     // slash command loaders
     this.slashCommandDirPath = `${slashCommandDirPath}/**/*.{ts,js}`;
-    await this.loadCommands();
-  }
+    // This will match files in the slashCommands directory and all its subdirectories
+    const files = await glob(
+      [
+        `${slashCommandDirPath}/*.{ts,js}`, // Matches files directly in the directory
+        `${slashCommandDirPath}/*/**/*.{ts,js}`, // Matches files in subdirectories
+      ],
+      { cwd: path.resolve(__dirname, "..") }
+    );
+    await this.loadCommands(files);
+  };
 
-  public loadCommands = async () => {
-    console.log(`Loading slash commands from path: ${this.slashCommandDirPath}`);
-
-    const files = await glob(this.slashCommandDirPath, { cwd: path.resolve(__dirname, "..") });
+  public loadCommands = async (files: any) => {
+    console.log(
+      `Loading slash commands from path: ${this.slashCommandDirPath}`
+    );
 
     console.log(`Found ${files.length} command files.`);
     console.log(files);
@@ -195,7 +205,7 @@ class SlashCommandManager<
       return `Command with name ${commandName} not found in cache.`;
     }
     return command;
-  }
+  };
 }
 
 export default SlashCommandManager;
