@@ -1,30 +1,30 @@
-# ChordJS
+# DiscrafterJS
 
 ## Overview
 
-ChordJS is a framework built on top of Discord.js. This framework was created with the goal of making Discord bot development easier and more structured. Adapting an opinionated coding style and convention system, ChordJS enforces consistency in how commands, events, and configurations are written. By doing so, it reduces ambiguity, improves readability, and helps developers focus more on functionality rather than boilerplate.
+DiscrafterJS is a framework built on top of Discord.js. This framework was created with the goal of making Discord bot development easier and more structured. Adapting an opinionated coding style and convention system, DiscrafterJS enforces consistency in how commands, events, and configurations are written. By doing so, it reduces ambiguity, improves readability, and helps developers focus more on functionality rather than boilerplate.
 
 ## Installation
 
 - Direct from GitHub
 
   ```js
-  npm i https://github.com/Danang-Bahtiar/ChordJS.git
+  npm i https://github.com/Danang-Bahtiar/DiscrafterJS.git
   ```
 
 - From NPM Registry
 
   ```js
-  npm i chordjs
+  npm i @dan_koyuki/discrafterjs
   ```
 
 ## Usage
 
-1. Create `chordjs.config.js` in the project root:
+1. Create `discrafter.config.js` in the project root:
 
    ```js
-   // example chordjs.config.js
-   import { defineConfig } from "chordjs";
+   // example discrafter.config.js
+   import { defineConfig } from "@dan_koyuki/discrafterjs";
    import { GatewayIntentBits } from "discord.js";
 
    const config = defineConfig({
@@ -58,9 +58,9 @@ ChordJS is a framework built on top of Discord.js. This framework was created wi
 2. `index.js`
 
    ```js
-   import { ChordJS } from "chordjs";
+   import { Discrafter } from "@dan_koyuki/discrafter";
 
-   const bot = ChordJS.create();
+   const bot = Discrafter.create();
    bot.login();
    ```
 
@@ -76,10 +76,10 @@ ChordJS is a framework built on top of Discord.js. This framework was created wi
 
    ```js
    // src/command/ping.js
-   import { ChordJS } from "chordjs";
+   import { Discrafter } from "@dan_koyuki/discrafter";
    import { SlashCommandBuilder } from "discord.js";
 
-   export default ChordJS.SlashCommand({
+   export default Discrafter.SlashCommand({
      data: new SlashCommandBuilder().setName("ping").setDescription("Pong!!"),
      execute: async (client, interaction) => {
        //your logic here

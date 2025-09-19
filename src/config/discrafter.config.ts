@@ -2,9 +2,9 @@ import { GatewayIntentBits } from "discord.js";
 import { RegistryTemplate } from "../template/registry.template.js";
 
 /**
- * Configuration for ChordJS options.
+ * Configuration for Discrafter options.
  *
- * Defines the customizable settings for initializing and running ChordJS.
+ * Defines the customizable settings for initializing and running Discrafter.
  *
  * @property core - Core Discord client settings.
  * @property core.intents - An array of GatewayIntentBits to specify which Discord events the bot should receive.
@@ -32,7 +32,7 @@ import { RegistryTemplate } from "../template/registry.template.js";
  * ```ts
  * import { GatewayIntentBits } from "discord.js";
  *
- * const config: ChordJSConfig = {
+ * const config: DiscrafterConfig = {
  *   core: {
  *     intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
  *     clientId: "your-client-id",
@@ -57,7 +57,7 @@ import { RegistryTemplate } from "../template/registry.template.js";
  * };
  * ```
  */
-export interface ChordJSConfig {
+export interface DiscrafterConfig {
   core: {
     intents: GatewayIntentBits[];
     clientId: string;
@@ -92,13 +92,13 @@ export interface ChordJSConfig {
 }
 
 /**
- * Defines and returns a ChordJS configuration object.
- * @param config - The ChordJS configuration object.
- * @returns The same ChordJS configuration object passed as an argument.
+ * Defines and returns a Discrafter configuration object.
+ * @param config - The Discrafter configuration object.
+ * @returns The same Discrafter configuration object passed as an argument.
  *
  * @example
  * ```ts
- * import { defineConfig } from "./template/chordjs.config.js";
+ * import { defineConfig } from "./template/discrafter.config.js";
  * import { GatewayIntentBits } from "discord.js";
  *
  * const config = defineConfig({
@@ -127,6 +127,6 @@ export interface ChordJSConfig {
  * });
  * ```
  */
-export function defineConfig(config: ChordJSConfig): ChordJSConfig {
+export function defineConfig(config: DiscrafterConfig): DiscrafterConfig {
   return config;
 }

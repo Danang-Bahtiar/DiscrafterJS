@@ -1,6 +1,6 @@
 {
-  "name": "chordjs",
-  "version": "0.1.2",
+  "name": "@dan_koyuki/discrafterjs",
+  "version": "0.2.0",
   "description": "A Discord.js framework built with TypeScript",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -40,8 +40,5 @@
     "discord.js": "^14.22.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"
-  },
-  "dependencies": {
-    
   }
 }

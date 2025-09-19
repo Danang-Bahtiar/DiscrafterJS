@@ -1,5 +1,5 @@
 import { Client, Collection } from "discord.js";
-import { ChordJSConfig } from "../config/chordjs.config.js";
+import { DiscrafterConfig } from "../config/discrafter.config.js";
 import { loadConfig } from "../loaders/config.loader.js";
 import { eventTemplate } from "../template/event.template.js";
 import { slashCommandTemplate } from "../template/slashCommand.template.js";
@@ -8,19 +8,19 @@ import EventManager from "../handlers/event.js";
 import path from "path";
 
 /**
- * Main ChordJS class for managing Discord bot functionalities.
- * @class ChordJS
+ * Main Discrafter class for managing Discord bot functionalities.
+ * @class Discrafter
  * @property {Client} client - Discord.js Client instance.
  * @property {string} discordToken - Token for authenticating the bot with Discord.
  * @property {Collection<string, any>} HandlerCollection - Collection of various handlers (e.g., slash commands, events).
- * @method static create - Creates and initializes a ChordJS instance based on the provided configuration.
+ * @method static create - Creates and initializes a Discrafter instance based on the provided configuration.
  * @method static SlashCommand - Defines a slash command configuration.
  * @method static Event - Defines an event configuration.
  * @method getClient - Retrieves the Discord.js Client instance.
  * @method login - Logs the bot into Discord using the provided token.
  *
  */
-class ChordJS {
+class Discrafter {
   private client!: Client;
   private discordToken!: string;
   private HandlerCollection: Collection<string, any> = new Collection();
@@ -28,17 +28,17 @@ class ChordJS {
   //============================= Static Methods ==============================//
 
   /**
-   * Creates and initializes a ChordJS instance based on the provided configuration.
-   * @returns A promise that resolves to an instance of ChordJS after loading the configuration and setting up handlers.
+   * Creates and initializes a Discrafter instance based on the provided configuration.
+   * @returns A promise that resolves to an instance of Discrafter after loading the configuration and setting up handlers.
    * @example
    * ```ts
-   * import { ChordJS } from "chordjs";
-   * const bot = await ChordJS.create();
+   * import { Discrafter } from "discrafter";
+   * const bot = await Discrafter.create();
    * ```
    */
   static async create() {
-    const config: ChordJSConfig = await loadConfig();
-    const instance = new ChordJS();
+    const config: DiscrafterConfig = await loadConfig();
+    const instance = new Discrafter();
 
     instance.configResolver(config);
 
@@ -73,12 +73,12 @@ class ChordJS {
 
   //============================= Private Methods ==============================//
 
-  private configResolver(config: ChordJSConfig) {
+  private configResolver(config: DiscrafterConfig) {
     this.client = new Client({ intents: config.core.intents });
     this.discordToken = config.core.discordToken;
   }
 
-  private async setup(config: ChordJSConfig) {
+  private async setup(config: DiscrafterConfig) {
     // SlashCommand
     if (config.slashCommand.useDefaultHandler) {
       const slashCommandManager = new SlashCommandManager();
@@ -94,7 +94,7 @@ class ChordJS {
       );
 
       this.HandlerCollection.set("slashCommand", slashCommandManager);
-      
+
       console.log("[HND] Loaded handler: slashCommand");
     }
 
@@ -185,7 +185,7 @@ class ChordJS {
 
   /**
    * Logs the bot into Discord using the provided token.
-   * Use after setting up the ChordJS instance using `ChordJS.create()`.
+   * Use after setting up the Discrafter instance using `Discrafter.create()`.
    */
   public login() {
     try {
@@ -199,4 +199,4 @@ class ChordJS {
   }
 }
 
-export default ChordJS;
+export default Discrafter;

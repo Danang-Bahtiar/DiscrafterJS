@@ -123,6 +123,11 @@ class SlashCommandManager<
   public listCommands = () => {
     return this.cacheCommand.map((cmd) => cmd.data.name);
   };
+
+  public reloadCommands = async () => {
+    this.cacheCommand.clear();
+    await this.loadCommands();
+  }
 }
 
 export default SlashCommandManager;
