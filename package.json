@@ -32,12 +32,16 @@
   "author": "Dan",
   "license": "MIT",
   "peerDependencies": {
-    "discord.js": "^14.22.1"
+    "discord.js": "^14.22.1",
+    "glob": "^11.0.3"
   },
   "devDependencies": {
     "@types/node": "^24.3.1",
+    "discord.js": "^14.22.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.2",
-    "discord.js": "^14.22.1"
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    
   }
 }
