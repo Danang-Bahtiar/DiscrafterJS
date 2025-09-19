@@ -57,7 +57,7 @@ class ChordJS {
       );
 
       await slashCommandManager.init(
-        commandsPath, // Pass the absolute path
+        commandsPath,
         config.core.clientId,
         config.core.discordToken
       );
