@@ -5,6 +5,7 @@ import { eventTemplate } from "../template/event.template.js";
 import { slashCommandTemplate } from "../template/slashCommand.template.js";
 import SlashCommandManager from "../handlers/slashCommand.js";
 import EventManager from "../handlers/event.js";
+import path from "path";
 
 class ChordJS {
   private client!: Client;
@@ -20,8 +21,14 @@ class ChordJS {
     // SlashCommand
     if (config.slashCommand.useDefaultHandler) {
       const slashCommandManager = new SlashCommandManager();
+      // Resolve the absolute path from the project's root.
+      const commandsPath = path.resolve(
+        process.cwd(),
+        config.slashCommand.customDirPath ?? "./src/slashCommands"
+      );
+
       await slashCommandManager.init(
-        config.slashCommand.customDirPath ?? "./src/slashCommands",
+        commandsPath, // Pass the absolute path
         config.core.clientId,
         config.core.discordToken
       );
@@ -45,9 +52,13 @@ class ChordJS {
         console.log(
           `Development guild ID set to: ${config.development.developmentGuildId}`
         );
-        const slashCommandManager = this.getHandler("slashCommand") as SlashCommandManager;
+        const slashCommandManager = this.getHandler(
+          "slashCommand"
+        ) as SlashCommandManager;
         if (slashCommandManager) {
-          await slashCommandManager.registerCommands(config.development.developmentGuildId);
+          await slashCommandManager.registerCommands(
+            config.development.developmentGuildId
+          );
           console.log(
             `Registered slash commands to development guild ID: ${config.development.developmentGuildId}`
           );

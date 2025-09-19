@@ -74,9 +74,7 @@ class SlashCommandManager<
       `Loading slash commands from path: ${this.slashCommandDirPath}`
     );
 
-    const files = await glob(this.slashCommandDirPath, {
-      cwd: path.resolve(__dirname, ".."),
-    });
+    const files = await glob(this.slashCommandDirPath);
     console.log({
       slashCommandDirPath: this.slashCommandDirPath,
       cwd: path.resolve(__dirname, ".."),
