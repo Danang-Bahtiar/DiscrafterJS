@@ -65,7 +65,9 @@ class SlashCommandManager<
     this.clientId = clientId;
 
     // slash command loaders
-    this.slashCommandDirPath = `${slashCommandDirPath}/**/*.{ts,js}`;
+    this.slashCommandDirPath = path
+      .join(slashCommandDirPath, "/**/*.{ts,js}")
+      .replace(/\\/g, "/");
     await this.loadCommands();
   };
 
@@ -75,17 +77,13 @@ class SlashCommandManager<
     );
 
     const files = await glob(this.slashCommandDirPath);
-    console.log({
-      slashCommandDirPath: this.slashCommandDirPath,
-      cwd: path.resolve(__dirname, ".."),
-    });
 
     console.log(`Found ${files.length} command files.`);
     console.log(files);
 
     for (const file of files) {
-      const filePath = path.resolve(file);
-      const fileUrl = `file://${filePath}`;
+      // You also need to fix the import path here
+      const fileUrl = `file://${file.replace(/\\/g, "/")}`;
       const commandModule = await import(`${fileUrl}?update=${Date.now()}`);
       const command: T = commandModule.default;
 
