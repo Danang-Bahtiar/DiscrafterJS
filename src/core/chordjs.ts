@@ -12,12 +12,41 @@ class ChordJS {
   private discordToken!: string;
   private HandlerCollection: Collection<string, any> = new Collection();
 
+  //============================= Static Methods ==============================//
+
+  static async create() {
+    const config: ChordJSConfig = await loadConfig();
+    const instance = new ChordJS();
+
+    instance.configResolver(config);
+
+    await instance.setup(config);
+
+    return instance;
+  }
+
+  // static Event(config: eventTemplate): eventTemplate {
+  //   if (!config.name || !config.execute) {
+  //     throw new Error("Event must have 'name' and 'execute' fields.");
+  //   }
+  //   return config;
+  // }
+
+  static SlashCommand<T extends slashCommandTemplate>(config: T): T {
+    if (!config.data || !config.execute) {
+      throw new Error("SlashCommand must have 'data' and 'execute' fields.");
+    }
+    return config;
+  }
+
+  //============================= Private Methods ==============================//
+
   private configResolver(config: ChordJSConfig) {
     this.client = new Client({ intents: config.core.intents });
     this.discordToken = config.core.discordToken;
   }
 
-  private async defaultSetup(config: ChordJSConfig) {
+  private async setup(config: ChordJSConfig) {
     // SlashCommand
     if (config.slashCommand.useDefaultHandler) {
       const slashCommandManager = new SlashCommandManager();
@@ -36,6 +65,69 @@ class ChordJS {
       console.log("[HND] Loaded handler: slashCommand");
     }
 
+    if (config.development?.developmentMode) {
+      console.log("Running in development mode.");
+
+      const slashCommandManager = this.HandlerCollection.get("slashCommand");
+
+      if (config.development?.developmentGuildId) {
+        console.log(
+          `[DEV] Registering commands to guild: ${config.development.developmentGuildId}`
+        );
+        await slashCommandManager.registerGuildCommands(
+          config.development.developmentGuildId
+        );
+      }
+
+      // Extra dev utilities
+      console.log("[DEV] Commands loaded:", slashCommandManager.listCommands());
+
+      process.on("uncaughtException", (err) => {
+        console.error("[DEV] Uncaught exception:", err);
+      });
+
+      process.on("unhandledRejection", (reason) => {
+        console.error("[DEV] Unhandled rejection:", reason);
+      });
+    }
+
+    if (config.slashCommand.globalRegister ?? false) {
+      const slashCommandManager = this.HandlerCollection.get("slashCommand");
+      if (slashCommandManager) {
+        await slashCommandManager.registerGlobalCommands();
+        console.log("Registered global slash commands.");
+      }
+    }
+
+    if (config.custom?.useDefaultInteractionEvent ?? false) {
+      const slashHandler = this.HandlerCollection.get("slashCommand");
+      this.client.on("interactionCreate", async (interaction) => {
+        if ("commandName" in interaction) {
+          if (interaction.isAutocomplete()) {
+            const command = interaction.commandName;
+            return slashHandler
+              .getCommands(command)
+              .autocomplete(interaction, this.client);
+          }
+
+          if (interaction.isChatInputCommand()) {
+            const command = interaction.commandName;
+            return slashHandler
+              .getCommands(command)
+              .execute(interaction, this.client);
+          }
+        } else if ("customId" in interaction) {
+          const [command, action] = interaction.customId.split("-");
+          if (!command) return; // ignore malformed customId
+
+          const cmd = slashHandler.getCommands(command);
+          if (cmd && typeof cmd[action] === "function") {
+            return cmd[action](interaction, this.client);
+          }
+        }
+      });
+    }
+
     // if (config.event.useDefaultHandler) {
     //   const eventManager = new EventManager();
     //   await eventManager.init(
@@ -45,47 +137,9 @@ class ChordJS {
     //   this.HandlerCollection.set("event", eventManager);
     //   console.log("[HND] Loaded handler: event");
     // }
-
-    if (config.development?.developmentMode) {
-      console.log("Running in development mode.");
-      if (config.development?.developmentGuildId) {
-        console.log(
-          `Development guild ID set to: ${config.development.developmentGuildId}`
-        );
-        const slashCommandManager = this.getHandler(
-          "slashCommand"
-        ) as SlashCommandManager;
-        if (slashCommandManager) {
-          await slashCommandManager.registerCommands(
-            config.development.developmentGuildId
-          );
-          console.log(
-            `Registered slash commands to development guild ID: ${config.development.developmentGuildId}`
-          );
-        }
-      }
-    }
-
-    // if (config.custom?.useDefaultInteractionEvent ?? false) {
-    //   this.client.on("interactionCreate", async (interaction) => {
-    //     if (!interaction.isChatInputCommand()) return;
-    //     const command = interaction.commandName;
-    //     if (!command) return;
-    //     await this.getHandler("slashCommand")?.useCommand(command, interaction, this.client);
-    //   });
-    // }
   }
 
-  static async create() {
-    const config: ChordJSConfig = await loadConfig();
-    const instance = new ChordJS();
-
-    instance.configResolver(config);
-
-    await instance.defaultSetup(config);
-
-    return instance;
-  }
+  //============================= Public Methods ==============================//
 
   public getClient() {
     return this.client;
@@ -102,23 +156,7 @@ class ChordJS {
     }
   }
 
-  protected getHandler(name: string) {
-    return this.HandlerCollection.get(name);
-  }
-
-  // static Event(config: eventTemplate): eventTemplate {
-  //   if (!config.name || !config.execute) {
-  //     throw new Error("Event must have 'name' and 'execute' fields.");
-  //   }
-  //   return config;
-  // }
-
-  static SlashCommand<T extends slashCommandTemplate>(config: T): T {
-    if (!config.data || !config.execute) {
-      throw new Error("SlashCommand must have 'data' and 'execute' fields.");
-    }
-    return config;
-  }
+  
 }
 
 export default ChordJS;

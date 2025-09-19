@@ -71,6 +71,7 @@ export interface ChordJSConfig {
   slashCommand: {
     useDefaultHandler: boolean;
     customDirPath?: string;
+    globalRegister?: boolean;
     guilds?: string[];
   };
   event: {
