@@ -38,6 +38,9 @@ class EventManager {
         continue;
       }
 
+      console.log(`[EVENT] Loaded event: ${event.name}`);
+      console.log(event);
+
       const handler = (...args: any[]) => event.execute(client, ...args);
       event.once
         ? client.once(event.name, handler)
