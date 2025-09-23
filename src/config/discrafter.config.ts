@@ -18,12 +18,16 @@ import { RegistryTemplate } from "../template/registry.template.js";
  *
  * @property slashCommand - Slash command handler configuration.
  * @property slashCommand.useDefaultHandler - A boolean indicating whether to use the default slash command handler.
- * @property slashCommand.customDirPath - (Optional) The directory path for custom slash command files.
+ * @property slashCommand.customDirPath - (Optional) The directory path for the default handler to load slash command file from.
  * @property slashCommand.guilds - (Optional) An array of guild IDs to which slash commands will be registered. If not provided, commands are registered globally.
  *
  * @property event - Event handler configuration.
  * @property event.useDefaultHandler - A boolean indicating whether to use the default event handler.
- * @property event.customDirPath - (Optional) The directory path for custom event handler files.
+ * @property event.customDirPath - (Optional) The directory path for the default handler to load file from.
+ * 
+ * @property helper - Helper Function handler configuration.
+ * @property helper.useDefaultHandler - A boolean indicating whether to use the dault Helper handler.
+ * @property helper.customDirPath - (Optional) The directory path for the default handler to load file from.
  *
  * @property custom - (Optional) Custom handler settings.
  * @property custom.useDefaultInteractionEvent - (Optional) Whether to use the default `interactionCreate` event handler, which handles only slash command interactions.
@@ -46,10 +50,15 @@ import { RegistryTemplate } from "../template/registry.template.js";
  *   slashCommand: {
  *      useDefaultHandler: true,
  *      customDirPath: "./src/slashCommands",
+ *      globalRegister: false
  *      guilds: ["guild-id-1", "guild-id-2"]},
  *   event: {
  *      useDefaultHandler: true,
  *      customDirPath: "./src/events"
+ *   },
+ *   helper: {
+ *      useDefaultHandler: true,
+ *      customDirPath: "./src/helpers"
  *   },
  *   custom: {
  *      useDefaultInteractionEvent: true,
@@ -79,7 +88,7 @@ export interface DiscrafterConfig {
     customDirPath?: string;
   };
   helper: {
-    useDefaultHandler?: boolean;
+    useDefaultHandler: boolean;
     customDirPath?: string;
   };
   mongoDB?: {
@@ -110,19 +119,23 @@ export interface DiscrafterConfig {
  *   },
  *   development: {
  *     developmentMode: true;
- *     developmentGuildId?: "your-guild-id";
+ *     developmentGuildId: "your-guild-id";
  *   },
  *   slashCommand: {
  *      useDefaultHandler: true,
  *      customDirPath: "./src/slashCommands",
+ *      globalRegister: false
  *      guilds: ["guild-id-1", "guild-id-2"]},
  *   event: {
  *      useDefaultHandler: true,
  *      customDirPath: "./src/events"
  *   },
+ *   helper: {
+ *      useDefaultHandler: true,
+ *      customDirPath: "./src/helpers"
+ *   },
  *   custom: {
  *      useDefaultInteractionEvent: true,
- *      eventDirPath: "./custom/events"
  *   },
  * });
  * ```

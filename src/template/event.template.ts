@@ -10,7 +10,7 @@ import { Client } from "discord.js";
  * @example
  * ```typescript
  * const exampleEvent: EventTemplate = {
- *   name: "ready",
+ *   name: "clientReady",
  *   once: true,
  *   execute: async (client: Client) => {
  *     console.log(`Logged in as ${client.user?.tag}!`);

@@ -1,6 +1,6 @@
 {
   "name": "@dan_koyuki/discrafterjs",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A Discord.js framework built with TypeScript",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -40,5 +40,13 @@
     "discord.js": "^14.22.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Danang-Bahtiar/DiscrafterJS.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Danang-Bahtiar/DiscrafterJS/issues"
+  },
+  "homepage": "https://github.com/Danang-Bahtiar/DiscrafterJS?tab=readme-ov-file#discrafterjs"
 }
