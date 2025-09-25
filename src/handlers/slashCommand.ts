@@ -1,12 +1,7 @@
 import {
-  Client,
   Collection,
-  Interaction,
   REST,
-  RESTGetAPIApplicationCommandsResult,
-  RESTGetAPIApplicationGuildCommandsResult,
   Routes,
-  SlashCommandBuilder,
 } from "discord.js";
 import path from "path";
 import { slashCommandTemplate } from "../template/slashCommand.template.js";

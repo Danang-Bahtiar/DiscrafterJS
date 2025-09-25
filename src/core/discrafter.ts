@@ -8,6 +8,7 @@ import EventManager from "../handlers/event.js";
 import path from "path";
 import HelperManager from "../handlers/helper.js";
 import { helperTemplate } from "../template/helper.template.js";
+import { ExtendedClient } from "../config/client.type.js";
 
 /**
  * Main Discrafter class for managing Discord bot functionalities.
@@ -23,7 +24,7 @@ import { helperTemplate } from "../template/helper.template.js";
  *
  */
 class Discrafter {
-  private client!: Client;
+  private client!: ExtendedClient;
   private discordToken!: string;
   private HandlerCollection: Collection<string, any> = new Collection();
   private typeMap: Record<string, (...args: any[]) => any[]> = {
@@ -183,6 +184,20 @@ class Discrafter {
       }
     }
 
+    if (config.helper.useDefaultHandler) {
+      const helperManager = new HelperManager();
+      const helperPath = path.resolve(
+        process.cwd(),
+        config.helper.customDirPath ?? "./src/helpers"
+      );
+
+      await helperManager.init(helperPath);
+      this.HandlerCollection.set("helper", helperManager);
+      console.log("[HND] Loaded handler: helper");
+    }
+
+    this.client.dispatchHelper = this.dispatchHelper;
+
     if (config.custom?.useDefaultInteractionEvent ?? false) {
       const slashHandler = this.HandlerCollection.get("slashCommand");
       this.client.on("interactionCreate", async (interaction) => {
@@ -222,43 +237,6 @@ class Discrafter {
       this.HandlerCollection.set("event", eventManager);
       console.log("[HND] Loaded handler: event");
     }
-
-    if (config.helper.useDefaultHandler) {
-      const helperManager = new HelperManager();
-      const helperPath = path.resolve(
-        process.cwd(),
-        config.helper.customDirPath ?? "./src/helpers"
-      );
-
-      await helperManager.init(helperPath);
-      this.HandlerCollection.set("helper", helperManager);
-      console.log("[HND] Loaded handler: helper");
-    }
-  }
-
-  //============================= Public Methods ==============================//
-
-  /**
-   * Retrieves the Discord.js Client instance.
-   * @returns The Discord.js Client instance.
-   */
-  public getClient = () => {
-    return this.client;
-  }
-
-  /**
-   * Logs the bot into Discord using the provided token.
-   * Use after setting up the Discrafter instance using `Discrafter.create()`.
-   */
-  public login = () => {
-    try {
-      this.client.login(this.discordToken);
-      this.client.once("clientReady", () => {
-        console.log(`Bot logged in successfully as ${this.client.user?.tag}.`);
-      });
-    } catch (error) {
-      console.error("Error logging in:", error);
-    }
   }
 
   /**
@@ -271,7 +249,7 @@ class Discrafter {
    * @param args 
    * @returns 
    */
-  public dispatchHelper = async (
+  private dispatchHelper = async (
     helperName: string,
     interaction: Interaction,
     ...args: any[]
@@ -306,6 +284,25 @@ class Discrafter {
       console.error(`[HELPER ERROR] ${helperName}:`, err);
     }
   };
+
+  //============================= Public Methods ==============================//
+
+  /**
+   * Logs the bot into Discord using the provided token.
+   * Use after setting up the Discrafter instance using `Discrafter.create()`.
+   */
+  public login = () => {
+    try {
+      this.client.login(this.discordToken);
+      this.client.once("clientReady", () => {
+        console.log(`Bot logged in successfully as ${this.client.user?.tag}.`);
+      });
+    } catch (error) {
+      console.error("Error logging in:", error);
+    }
+  }
+
+  
 }
 
 export default Discrafter;

@@ -1,4 +1,4 @@
-import { Client } from "discord.js";
+import { ExtendedClient } from "../config/client.type.js";
 
 /**
  * Template for defining Discord event handlers.
@@ -21,5 +21,5 @@ import { Client } from "discord.js";
 export type eventTemplate = {
   name: string;
   once: boolean;
-  execute: (client: Client, ...args: any[]) => Promise<void>;
+  execute: (client: ExtendedClient, ...args: any[]) => Promise<void>;
 };

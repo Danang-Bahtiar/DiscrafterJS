@@ -1,6 +1,6 @@
 {
   "name": "@dan_koyuki/discrafterjs",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "A Discord.js framework built with TypeScript",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

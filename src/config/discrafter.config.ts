@@ -91,13 +91,12 @@ export interface DiscrafterConfig {
     useDefaultHandler: boolean;
     customDirPath?: string;
   };
-  mongoDB?: {
-    useDefaultHandler?: boolean;
-    registries: RegistryTemplate[];
-  };
   custom?: {
     useDefaultInteractionEvent?: boolean;
   };
+  plugin?: {
+    RPGTamer: boolean;
+  }
 }
 
 /**

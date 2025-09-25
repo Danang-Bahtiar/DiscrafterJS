@@ -29,5 +29,5 @@ export type helperTemplate = {
     | "ClientArgs"
     | "All";
   description?: string;
-  execute: (...args: any[]) => Promise<void>;
+  execute: (...args: any[]) => Promise<any>;
 };

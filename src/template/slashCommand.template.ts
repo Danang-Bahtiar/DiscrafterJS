@@ -1,4 +1,5 @@
-import { Client, Interaction, SlashCommandBuilder } from "discord.js";
+import { Interaction, SlashCommandBuilder } from "discord.js";
+import { ExtendedClient } from "../config/client.type.js";
 
 /**
  * Template interface for defining a slash command handler.
@@ -23,5 +24,5 @@ import { Client, Interaction, SlashCommandBuilder } from "discord.js";
 export interface slashCommandTemplate {
     tag: "bot" | "owner" | "user";
     data: SlashCommandBuilder;
-    execute: (interaction: Interaction, client: Client) => Promise<void>;
+    execute: (interaction: Interaction, client: ExtendedClient) => Promise<void>;
 }

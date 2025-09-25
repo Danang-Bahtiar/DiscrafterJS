@@ -1,7 +1,7 @@
-import { Client } from "discord.js";
 import { glob } from "glob";
 import path from "path";
 import { fileURLToPath } from "url";
+import { ExtendedClient } from "../config/client.type.js";
 
 /**
  * @internal
@@ -22,7 +22,7 @@ class EventManager {
    * @param eventDirPath - Directory path to load event files from.
    * @param client - Discord client instance.
    */
-  public init = async (eventDirPath: string, client: Client) => {
+  public init = async(eventDirPath: string, client: ExtendedClient) => {
     const eventDir = path
       .join(eventDirPath, "/**/*.{ts,js}")
       .replace(/\\/g, "/");

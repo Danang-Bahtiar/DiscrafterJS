@@ -146,9 +146,9 @@ DiscrafterJS is a framework built on top of Discord.js. This framework was creat
     ```
    
 ## Roadmap
-- v0.3: Documentation & helper skeleton
+- ~~v0.3: Documentation & helper function handler~~ (Done)
 - v0.3.5: Colorized logging (might or might not be skipped or moved)
-- v0.4: MongoDB Configuration Support
+- ~~v0.4: MongoDB Configuration Support~~ (Scrapped/Moved to different package as plugin)
 - v0.5: Plugin/extension support (e.g., RPGTamerDiscrafter)
   
 ## Contributing
