@@ -13,7 +13,7 @@ DiscrafterJS is a framework built on top of Discord.js. This framework was creat
 - ⚡ CLI scaffolder via `npx create-discrafter-bot`
 - 📦 TypeScript support out of the box (but feels like JS)
 - 🔌 Easy to extend with your own handlers
-- 🛠️ Default helpers dispatcher (optional)
+- 🛠️ Default helpers dispatcher
 
 
 ## Installation
@@ -85,10 +85,8 @@ DiscrafterJS is a framework built on top of Discord.js. This framework was creat
    ```js
    import { Discrafter } from "@dan_koyuki/discrafterjs";
 
-   const bot = Discrafter.create();
-   bot.login();
-
-   export default bot;
+   const client = Discrafter.create();
+   client.login();
    ```
 
 3. Creating SlashCommand files
@@ -97,13 +95,12 @@ DiscrafterJS is a framework built on top of Discord.js. This framework was creat
    // src/command/ping.js
    import { Discrafter } from "@dan_koyuki/discrafterjs";
    import { SlashCommandBuilder } from "discord.js";
-   import {bot} from "./index.js"
 
    export default Discrafter.SlashCommand({
      data: new SlashCommandBuilder().setName("register").setDescription("Register a player!!"),
      execute: async (client, interaction) => {
        //your logic here
-      bot.dispatchHelper("register", interaction);
+      client.dispatchHelper("register", interaction);
      },
    });
    ```
