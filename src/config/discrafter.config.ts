@@ -79,6 +79,7 @@ export interface DiscrafterConfig {
   };
   slashCommand: {
     useDefaultHandler: boolean;
+    useDefaultReloadCommand: boolean;
     customDirPath?: string;
     globalRegister?: boolean;
     guilds?: string[];

@@ -1,4 +1,4 @@
-import { Client, Collection, Interaction } from "discord.js";
+import { Client, Collection, Interaction, SlashCommandBuilder } from "discord.js";
 import { DiscrafterConfig } from "../config/discrafter.config.js";
 import { loadConfig } from "../loaders/config.loader.js";
 import { eventTemplate } from "../template/event.template.js";
@@ -12,58 +12,38 @@ import { ExtendedClient } from "../config/client.type.js";
 
 /**
  * Main Discrafter class for managing Discord bot functionalities.
- * @class Discrafter
- * @property {Client} client - Discord.js Client instance.
- * @property {string} discordToken - Token for authenticating the bot with Discord.
- * @property {Collection<string, any>} HandlerCollection - Collection of various handlers (e.g., slash commands, events). By default has following key [slashCommand, event, helper] depending on which DefaultHandler with value of true in discrafter.config.js.
- * @method static create - Creates and initializes a Discrafter instance based on the provided configuration.
- * @method static SlashCommand - Defines a slash command configuration.
- * @method static Event - Defines an event configuration.
- * @method getClient - Retrieves the Discord.js Client instance.
- * @method login - Logs the bot into Discord using the provided token.
- *
  */
 class Discrafter {
   private client!: ExtendedClient;
   private discordToken!: string;
   private HandlerCollection: Collection<string, any> = new Collection();
-  private typeMap: Record<string, (...args: any[]) => any[]> = {
-      Interaction: (interaction) => [interaction],
-      Client: (_, client) => [client],
-      Args: (_, __, ...args) => args,
-      InteractionClient: (interaction, client) => [interaction, client],
-      InteractionArgs: (interaction, __, ...args) => [interaction, ...args],
-      ClientArgs: (_, client, ...args) => [client, ...args],
-      All: (interaction, client, ...args) => [interaction, client, ...args],
-    };
 
-  //============================= Static Methods ==============================//
+  // Argument parsers for Helper functions
+  private typeMap: Record<
+    string,
+    (i: Interaction, c: Client, ...args: any[]) => any[]
+  > = {
+    Interaction: (i) => [i],
+    Client: (_, c) => [c],
+    Args: (_, __, ...args) => args,
+    InteractionClient: (i, c) => [i, c],
+    InteractionArgs: (i, __, ...args) => [i, ...args],
+    ClientArgs: (_, c, ...args) => [c, ...args],
+    All: (i, c, ...args) => [i, c, ...args],
+  };
 
-  /**
-   * Creates and initializes a Discrafter instance based on the provided configuration.
-   * @returns A promise that resolves to an instance of Discrafter after loading the configuration and setting up handlers.
-   * @example
-   * ```ts
-   * import { Discrafter } from "discrafter";
-   * const bot = await Discrafter.create();
-   * ```
-   */
+  // ============================= Static Methods ============================== //
+
   static async create() {
     const config: DiscrafterConfig = await loadConfig();
     const instance = new Discrafter();
 
     instance.configResolver(config);
-
     await instance.setup(config);
 
     return instance;
   }
 
-  /**
-   * Defines and returns an event configuration object.
-   * @param config - Configuration object for defining an event.
-   * @returns
-   */
   static Event(config: eventTemplate): eventTemplate {
     if (!config.name || !config.execute) {
       throw new Error("Event must have 'name' and 'execute' fields.");
@@ -71,11 +51,6 @@ class Discrafter {
     return config;
   }
 
-  /**
-   * Defines and returns a slash command configuration object.
-   * @param config - Configuration object for defining a slash command.
-   * @returns
-   */
   static SlashCommand<T extends slashCommandTemplate>(config: T): T {
     if (!config.data || !config.execute) {
       throw new Error("SlashCommand must have 'data' and 'execute' fields.");
@@ -83,11 +58,6 @@ class Discrafter {
     return config;
   }
 
-  /**
-   * Defines and returns a helper function configuration object.
-   * @param config - Configuration object for defining a Helper file.
-   * @returns 
-   */
   static Helper(config: helperTemplate): helperTemplate {
     if (!config.name || !config.execute || !config.type) {
       throw new Error("Helper must have name, type and executable function!");
@@ -95,7 +65,7 @@ class Discrafter {
     return config;
   }
 
-  //============================= Private Methods ==============================//
+  // ============================= Core Setup ============================== //
 
   private configResolver(config: DiscrafterConfig) {
     this.client = new Client({ intents: config.core.intents });
@@ -103,206 +73,246 @@ class Discrafter {
   }
 
   private async setup(config: DiscrafterConfig) {
-    // SlashCommand
-    if (config.slashCommand.useDefaultHandler) {
-      const slashCommandManager = new SlashCommandManager();
-      const commandsPath = path.resolve(
-        process.cwd(),
-        config.slashCommand.customDirPath ?? "./src/commands"
-      );
+    this.log("SYS", "Initializing Discrafter...");
 
-      await slashCommandManager.init(
-        commandsPath,
-        config.core.clientId,
-        config.core.discordToken
-      );
+    // 1. Initialize Handlers
+    await this.initializeSlashCommands(config);
+    await this.initializeHelpers(config);
+    await this.initializeEvents(config);
 
-      this.HandlerCollection.set("slashCommand", slashCommandManager);
-
-      console.log("[HND] Loaded handler: slashCommand");
+    // 2. Register Runtime Listeners
+    if (config.custom?.useDefaultInteractionEvent) {
+      this.registerInteractionListener();
     }
 
-    if (config.development?.developmentMode) {
-      console.log("Running in development mode.");
-
-      const slashCommandManager = this.HandlerCollection.get("slashCommand");
-
-      if (config.development?.developmentGuildId) {
-        console.log(
-          `[DEV] Registering commands to guild: ${config.development.developmentGuildId}`
-        );
-        await slashCommandManager.registerGuildCommands(
-          config.development.developmentGuildId
-        );
-      }
-
-      // Extra dev utilities
-      console.log("[DEV] Commands loaded:", slashCommandManager.listCommands());
-
-      process.on("uncaughtException", (err) => {
-        console.error("[DEV] Uncaught exception:", err);
-      });
-
-      process.on("unhandledRejection", (reason) => {
-        console.error("[DEV] Unhandled rejection:", reason);
-      });
-    }
-
-    if (
-      config.slashCommand.globalRegister &&
-      config.slashCommand.guilds?.length !== 0
-    ) {
-      const pickGlobal = Math.random() < 0.5;
-      if (pickGlobal) config.slashCommand.guilds = [];
-      else config.slashCommand.globalRegister = false;
-    }
-
-    if (
-      config.slashCommand.globalRegister === true &&
-      config.slashCommand.guilds?.length === 0 &&
-      config.development?.developmentMode !== true
-    ) {
-      const slashCommandManager = this.HandlerCollection.get("slashCommand");
-      if (slashCommandManager) {
-        await slashCommandManager.registerGlobalCommands();
-        console.log("Registered global slash commands.");
-      }
-    }
-
-    if (
-      config.slashCommand.globalRegister === false &&
-      Array.isArray(config.slashCommand.guilds) &&
-      config.slashCommand.guilds.length > 0 &&
-      config.development?.developmentMode !== true
-    ) {
-      const slashCommandManager = this.HandlerCollection.get("slashCommand");
-      if (slashCommandManager) {
-        await slashCommandManager.registerGuildCommands(
-          config.slashCommand.guilds
-        );
-        console.log("Registered guild-specific slash commands.");
-      }
-    }
-
-    if (config.helper.useDefaultHandler) {
-      const helperManager = new HelperManager();
-      const helperPath = path.resolve(
-        process.cwd(),
-        config.helper.customDirPath ?? "./src/helpers"
-      );
-
-      await helperManager.init(helperPath);
-      this.HandlerCollection.set("helper", helperManager);
-      console.log("[HND] Loaded handler: helper");
-    }
-
-    this.client.dispatchHelper = this.dispatchHelper;
-
-    if (config.custom?.useDefaultInteractionEvent ?? false) {
-      const slashHandler = this.HandlerCollection.get("slashCommand");
-      this.client.on("interactionCreate", async (interaction) => {
-        if ("commandName" in interaction) {
-          if (interaction.isAutocomplete()) {
-            const command = interaction.commandName;
-            return slashHandler
-              .getCommands(command)
-              .autocomplete(interaction, this.client);
-          }
-
-          if (interaction.isChatInputCommand()) {
-            const command = interaction.commandName;
-            return slashHandler
-              .getCommands(command)
-              .execute(interaction, this.client);
-          }
-        } else if ("customId" in interaction) {
-          const [command, action] = interaction.customId.split("-");
-          if (!command) return; // ignore malformed customId
-
-          const cmd = slashHandler.getCommands(command);
-          if (cmd && typeof cmd[action] === "function") {
-            return cmd[action](interaction, this.client);
-          }
-        }
-      });
-    }
-
-    if (config.event.useDefaultHandler) {
-      const eventManager = new EventManager();
-      const eventsPath = path.resolve(
-        process.cwd(),
-        config.event.customDirPath ?? "./src/events"
-      );
-      await eventManager.init(eventsPath, this.client);
-      this.HandlerCollection.set("event", eventManager);
-      console.log("[HND] Loaded handler: event");
-    }
+    this.log("SYS", "Initialization Complete.");
   }
 
-  /**
-  * Dispatches a helper function by name.
-  *
-  * This function looks up a helper in the loaded helper collection
-  * and calls its `execute` method with the correct arguments depending on the helper's type.
-   * @param helperName 
-   * @param interaction 
-   * @param args 
-   * @returns 
-   */
+  // ============================= Module Initializers ============================== //
+
+  private async initializeSlashCommands(config: DiscrafterConfig) {
+    if (!config.slashCommand.useDefaultHandler) return;
+
+    const manager = new SlashCommandManager();
+    const cmdPath = path.resolve(
+      process.cwd(),
+      config.slashCommand.customDirPath ?? "./src/commands"
+    );
+
+    // 1. Load Commands from file system
+    await manager.init(cmdPath, config.core.clientId, config.core.discordToken);
+
+    if (config.slashCommand.useDefaultReloadCommand) {
+      const reloadCommand = {
+        data: new SlashCommandBuilder()
+          .setName("reload_system")
+          .setDescription("♻️ [DEV] Reloads all slash commands and events.")
+          .setDefaultMemberPermissions(8), // 8 = ADMINISTRATOR (Safety first!)
+        execute: async (interaction: any) => {
+          // Type as any or specific Interaction type
+          await interaction.deferReply({ ephemeral: true });
+          try {
+            await manager.reloadCommands();
+            await interaction.editReply({
+              content:
+                "✅ **System Reloaded!** All commands have been refreshed.",
+            });
+          } catch (e) {
+            await interaction.editReply({
+              content: `❌ **Reload Failed:** ${e}`,
+            });
+          }
+        },
+      };
+
+      // We cast to 'any' here because your template might be strict,
+      // but this internal object is valid.
+      manager.addManualCommand(reloadCommand as any);
+    }
+
+    this.HandlerCollection.set("slashCommand", manager);
+    this.log(
+      "HND",
+      `SlashCommand Handler loaded. (${manager.getCommandCount()} commands found)`
+    );
+
+    // 2. Registration Logic (Dev vs Global vs Guild)
+    const { development } = config;
+    const { globalRegister, guilds } = config.slashCommand;
+
+    // CASE A: Development Mode (Priority)
+    if (development?.developmentMode && development.developmentGuildId) {
+      this.log(
+        "DEV",
+        `Running in Development Mode. Registering to: ${development.developmentGuildId}`
+      );
+      await manager.registerGuildCommands(development.developmentGuildId);
+
+      // Dev Observability
+      manager
+        .listCommands()
+        .forEach((cmd) => this.log("DEV", `Loaded Command: /${cmd}`));
+      this.setupDevErrorHandling();
+      return;
+    }
+
+    // CASE B: Global Registration
+    if (globalRegister) {
+      this.log("CMD", "Registering commands GLOBALLY...");
+      await manager.registerGlobalCommands();
+      return;
+    }
+
+    // CASE C: Specific Guild Whitelist
+    if (Array.isArray(guilds) && guilds.length > 0) {
+      this.log(
+        "CMD",
+        `Registering commands to ${guilds.length} specific guilds...`
+      );
+      await manager.registerGuildCommands(guilds);
+      return;
+    }
+
+    this.log("WARN", "No command registration method matched configuration.");
+  }
+
+  private async initializeHelpers(config: DiscrafterConfig) {
+    if (!config.helper.useDefaultHandler) return;
+
+    const manager = new HelperManager();
+    const helperPath = path.resolve(
+      process.cwd(),
+      config.helper.customDirPath ?? "./src/helpers"
+    );
+
+    await manager.init(helperPath);
+    this.HandlerCollection.set("helper", manager);
+    this.log("HND", "Helper Handler loaded.");
+
+    // Attach dispatch method to client for global access
+    this.client.dispatchHelper = this.dispatchHelper;
+  }
+
+  private async initializeEvents(config: DiscrafterConfig) {
+    if (!config.event.useDefaultHandler) return;
+
+    const manager = new EventManager();
+    const eventPath = path.resolve(
+      process.cwd(),
+      config.event.customDirPath ?? "./src/events"
+    );
+
+    await manager.init(eventPath, this.client);
+    this.HandlerCollection.set("event", manager);
+    this.log("HND", "Event Handler loaded.");
+  }
+
+  // ============================= Runtime Logic ============================== //
+
+  private registerInteractionListener() {
+    const slashHandler = this.HandlerCollection.get("slashCommand");
+    if (!slashHandler) return;
+
+    this.client.on("interactionCreate", async (interaction) => {
+      try {
+        // Handle Chat Inputs
+        if (interaction.isChatInputCommand()) {
+          return slashHandler
+            .getCommands(interaction.commandName)
+            .execute(interaction, this.client);
+        }
+
+        // Handle Autocomplete
+        if (interaction.isAutocomplete()) {
+          return slashHandler
+            .getCommands(interaction.commandName)
+            .autocomplete(interaction, this.client);
+        }
+
+        // Handle Custom ID Interactions (Buttons/Modals: "commandName-action")
+        if ("customId" in interaction) {
+          const [command, action] = interaction.customId.split("-");
+          if (!command || !action) return;
+
+          const cmdModule = slashHandler.getCommands(command);
+          if (cmdModule && typeof cmdModule[action] === "function") {
+            return cmdModule[action](interaction, this.client);
+          }
+        }
+      } catch (error) {
+        console.error("Interaction Error:", error);
+      }
+    });
+  }
+
   private dispatchHelper = async (
     helperName: string,
     interaction: Interaction,
     ...args: any[]
   ) => {
-    const helperManager = this.HandlerCollection.get("helper");
+    const manager = this.HandlerCollection.get("helper");
+    const module = manager?.getHelper(helperName);
 
-    const helperModule = helperManager.getHelper(helperName);
-
-    if (!helperModule) {
-      console.log(`Unable to find helper function: ${helperName}`);
+    if (!module || typeof module.execute !== "function") {
+      this.log("ERR", `Helper '${helperName}' not found or invalid.`);
       return;
     }
 
-    if (typeof helperModule.execute !== "function") {
-      console.log(
-        `Invalid Helper Function Object. Unable to Execute the function.`
-      );
-      return;
-    }
-
-    const factory = this.typeMap[helperModule.type];
+    const factory = this.typeMap[module.type];
     if (!factory) {
-      console.log(`Unknown helper type: ${helperModule.type}`);
+      this.log(
+        "ERR",
+        `Unknown helper type '${module.type}' for '${helperName}'`
+      );
       return;
     }
 
     try {
-      return await helperModule.execute(
-        ...factory(interaction, this.client, ...args)
-      );
+      const preparedArgs = factory(interaction, this.client, ...args);
+      return await module.execute(...preparedArgs);
     } catch (err) {
-      console.error(`[HELPER ERROR] ${helperName}:`, err);
+      this.log("ERR", `Failed to execute helper '${helperName}': ${err}`);
     }
   };
 
-  //============================= Public Methods ==============================//
+  // ============================= Utilities ============================== //
 
-  /**
-   * Logs the bot into Discord using the provided token.
-   * Use after setting up the Discrafter instance using `Discrafter.create()`.
-   */
+  private setupDevErrorHandling() {
+    process.on("uncaughtException", (err) =>
+      this.log("FATAL", `Uncaught: ${err.message}`)
+    );
+    process.on("unhandledRejection", (reason) =>
+      this.log("FATAL", `Rejection: ${reason}`)
+    );
+  }
+
+  private log(
+    tag: "SYS" | "HND" | "CMD" | "DEV" | "ERR" | "WARN" | "FATAL",
+    message: string
+  ) {
+    const colors = {
+      SYS: "\x1b[36m", // Cyan
+      HND: "\x1b[35m", // Magenta
+      CMD: "\x1b[32m", // Green
+      DEV: "\x1b[33m", // Yellow
+      ERR: "\x1b[31m", // Red
+      WARN: "\x1b[33m", // Yellow
+      FATAL: "\x1b[41m", // BgRed
+    };
+    const reset = "\x1b[0m";
+    console.log(`${colors[tag]}[${tag}]${reset} ${message}`);
+  }
+
   public login = () => {
     try {
       this.client.login(this.discordToken);
       this.client.once("clientReady", () => {
-        console.log(`Bot logged in successfully as ${this.client.user?.tag}.`);
+        this.log("SYS", `Logged in as ${this.client.user?.tag}`);
       });
     } catch (error) {
-      console.error("Error logging in:", error);
+      this.log("FATAL", `Login failed: ${error}`);
     }
-  }
-
-  
+  };
 }
 
 export default Discrafter;

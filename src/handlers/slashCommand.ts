@@ -1,48 +1,35 @@
-import {
-  Collection,
-  REST,
-  Routes,
-} from "discord.js";
+import { Collection, REST, Routes } from "discord.js";
 import path from "path";
 import { slashCommandTemplate } from "../template/slashCommand.template.js";
 import { glob } from "glob";
-import { fileURLToPath } from "url";
 
-/**
- * @internal
- * Utility versions of __dirname and __filename for ESM compatibility.
- */
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// 🎨 Visual Styling Helpers
+const style = {
+  reset: "\x1b[0m",
+  green: "\x1b[32m",
+  yellow: "\x1b[33m",
+  red: "\x1b[31m",
+  cyan: "\x1b[36m",
+  dim: "\x1b[2m",
+};
 
 /**
  * Manager for handling Discord slash commands.
  * Supports loading, registering, retrieving, updating, and executing commands.
- * @template T - Type extending the slashCommandTemplate interface.
- * @property {string} slashCommandDirPath - Filesystem path to load command files from.
- * @property {Collection<string, T>} cacheCommand - Cache of loaded commands.
- * @property {REST} rest - REST client for Discord API interactions.
- * @property {string} clientId - Discord application client ID.
- * @property {Collection<string, any>} cacheGlobalCommands - Cache for global commands.
- * @property {Collection<string, Collection<string, any>>} cacheGuildCommands - Cache for guild-specific commands.
- * @function loadCommands - Loads command files from the specified path.
- * @function registerCommands - Registers commands globally or for a specific guild.
- * @function getCommands - Retrieves a commands, either global or guild-specific using discord API.
- * @function getOneCommand - Retrieves a single command by name, either global or guild-specific uisng discord API.
- * @function updateCommand - Updates an existing command with new data.
- * @function useCommand - Executes a command based on interaction and client context.
- * @function getCommandData - Retrieves a command's data by name from the cache.
  */
 class SlashCommandManager<
   T extends slashCommandTemplate = slashCommandTemplate
 > {
   private cacheCommand: Collection<string, T>;
+  private manualCommands: Collection<string, T>;
+
   private rest!: REST;
   private clientId!: string;
   private slashCommandDirPath!: string;
 
   constructor() {
     this.cacheCommand = new Collection();
+    this.manualCommands = new Collection();
   }
 
   public init = async (
@@ -52,36 +39,76 @@ class SlashCommandManager<
   ) => {
     // REST client setup
     this.rest = new REST({ version: "10" }).setToken(discordToken);
-
-    // Client ID setup
     this.clientId = clientId;
 
-    // slash command loaders
+    // Normalize path for glob (Windows compatibility)
     this.slashCommandDirPath = path
       .join(slashCommandDirPath, "/**/*.{ts,js}")
       .replace(/\\/g, "/");
+
     await this.loadCommands();
   };
 
+  /**
+   * 🆕 NEW: Registers a command manually (bypassing the file loader).
+   * These persist even after reloadCommands() is called.
+   */
+  public addManualCommand = (command: T) => {
+    this.manualCommands.set(command.data.name, command);
+    // Also add to active cache immediately
+    this.cacheCommand.set(command.data.name, command);
+    console.log(
+      `${style.cyan}[CMD] [INTERNAL] Registered internal command: /${command.data.name}${style.reset}`
+    );
+  };
+
   public loadCommands = async () => {
+    // 1. Clear ONLY the file-based cache logic
+    this.cacheCommand.clear();
+
+    // 2. Re-apply Manual Commands first (So they are always present)
+    this.manualCommands.forEach((cmd) => {
+      this.cacheCommand.set(cmd.data.name, cmd);
+    });
+
     const files = await glob(this.slashCommandDirPath);
 
-    console.log(files);
+    if (files.length === 0) {
+      console.log(
+        `${style.yellow}[CMD] [WARN] No command files found in: ${this.slashCommandDirPath}${style.reset}`
+      );
+      return;
+    }
 
     for (const file of files) {
       const fileUrl = `file://${file.replace(/\\/g, "/")}`;
-      const commandModule = await import(`${fileUrl}?update=${Date.now()}`);
-      const command: T = commandModule.default;
 
-      if (!command.data.name || typeof command.execute !== "function") {
-        console.warn(
-          `Invalid command structure in file: ${file}. Skipping this command.`
+      try {
+        // Cache busting for hot-reloading
+        const commandModule = await import(`${fileUrl}?update=${Date.now()}`);
+        const command: T = commandModule.default;
+
+        if (!command?.data?.name || typeof command.execute !== "function") {
+          console.warn(
+            `${
+              style.yellow
+            }[CMD] [SKIP] Invalid command structure: ${path.basename(file)}${
+              style.reset
+            }`
+          );
+          continue;
+        }
+
+        this.cacheCommand.set(command.data.name, command);
+        // Optional: Verbose logging
+        // console.log(`[CMD] Loaded: ${command.data.name}`);
+      } catch (error) {
+        console.error(
+          `${style.red}[CMD] [ERR] Failed to load ${path.basename(
+            file
+          )}: ${error}${style.reset}`
         );
-        continue;
       }
-
-      this.cacheCommand.set(command.data.name, command);
-      console.log(`[CMD] Loaded slash command: ${command.data.name}`);
     }
   };
 
@@ -89,40 +116,69 @@ class SlashCommandManager<
     const ids = Array.isArray(guildIds) ? guildIds : [guildIds];
 
     for (const guildId of ids) {
-      await this.rest.put(
-        Routes.applicationGuildCommands(this.clientId, guildId),
-        {
-          body: this.cacheCommand.map((cmd) => cmd.data.toJSON()),
-        }
-      );
-      console.log(
-        `Registered ${this.cacheCommand.size} commands for guild ${guildId}`
-      );
+      try {
+        await this.rest.put(
+          Routes.applicationGuildCommands(this.clientId, guildId),
+          {
+            body: this.cacheCommand.map((cmd) => cmd.data.toJSON()),
+          }
+        );
+        console.log(
+          `${style.green}[CMD] Registered ${this.cacheCommand.size} commands for Guild: ${guildId}${style.reset}`
+        );
+      } catch (error) {
+        console.error(
+          `${style.red}[CMD] [ERR] Registration failed for Guild ${guildId}: ${error}${style.reset}`
+        );
+      }
     }
   };
 
   public registerGlobalCommands = async () => {
-    await this.rest.put(Routes.applicationCommands(this.clientId), {
-      body: this.cacheCommand.map((cmd) => cmd.data.toJSON()),
-    });
+    try {
+      await this.rest.put(Routes.applicationCommands(this.clientId), {
+        body: this.cacheCommand.map((cmd) => cmd.data.toJSON()),
+      });
+      console.log(
+        `${style.green}[CMD] Registered ${this.cacheCommand.size} commands GLOBALLY.${style.reset}`
+      );
+    } catch (error) {
+      console.error(
+        `${style.red}[CMD] [ERR] Global registration failed: ${error}${style.reset}`
+      );
+    }
   };
 
-  public getCommands = (commandName: string) => {
-    const commands = this.cacheCommand.get(commandName);
-    if (!commands) {
-      throw new Error(`Command with name ${commandName} not found in cache.`);
+  /**
+   * Retrieves a single command module by name.
+   */
+  public getCommands = (commandName: string): T => {
+    const command = this.cacheCommand.get(commandName);
+    if (!command) {
+      throw new Error(`Command '${commandName}' not found in cache.`);
     }
-    return commands;
+    return command;
   };
 
   public listCommands = () => {
     return this.cacheCommand.map((cmd) => cmd.data.name);
   };
 
+  /**
+   * Returns the number of loaded commands.
+   * Used by Discrafter to show startup stats.
+   */
+  public getCommandCount = (): number => {
+    return this.cacheCommand.size;
+  };
+
   public reloadCommands = async () => {
-    this.cacheCommand.clear();
-    await this.loadCommands();
-  }
+    console.log(`${style.cyan}[CMD] Reloading all commands...${style.reset}`);
+    await this.loadCommands(); // This now safely keeps manual commands!
+    console.log(
+      `${style.green}[CMD] Reload complete. Active commands: ${this.cacheCommand.size}${style.reset}`
+    );
+  };
 }
 
 export default SlashCommandManager;
