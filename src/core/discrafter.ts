@@ -1,4 +1,4 @@
-import { Client, Collection, Interaction, SlashCommandBuilder } from "discord.js";
+import { Client, Collection, Interaction, MessageFlags, SlashCommandBuilder } from "discord.js";
 import { DiscrafterConfig } from "../config/discrafter.config.js";
 import { loadConfig } from "../loaders/config.loader.js";
 import { eventTemplate } from "../template/event.template.js";
@@ -110,7 +110,9 @@ class Discrafter {
           .setDefaultMemberPermissions(8), // 8 = ADMINISTRATOR (Safety first!)
         execute: async (interaction: any) => {
           // Type as any or specific Interaction type
-          await interaction.deferReply({ ephemeral: true });
+          await interaction.deferReply({
+            flags: MessageFlags.Ephemeral
+          });
           try {
             await manager.reloadCommands();
             await interaction.editReply({
