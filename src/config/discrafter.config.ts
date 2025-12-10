@@ -24,7 +24,7 @@ import { RegistryTemplate } from "../template/registry.template.js";
  * @property event - Event handler configuration.
  * @property event.useDefaultHandler - A boolean indicating whether to use the default event handler.
  * @property event.customDirPath - (Optional) The directory path for the default handler to load file from.
- * 
+ *
  * @property helper - Helper Function handler configuration.
  * @property helper.useDefaultHandler - A boolean indicating whether to use the dault Helper handler.
  * @property helper.customDirPath - (Optional) The directory path for the default handler to load file from.
@@ -79,7 +79,6 @@ export interface DiscrafterConfig {
   };
   slashCommand: {
     useDefaultHandler: boolean;
-    useDefaultReloadCommand: boolean;
     customDirPath?: string;
     globalRegister?: boolean;
     guilds?: string[];
@@ -92,12 +91,21 @@ export interface DiscrafterConfig {
     useDefaultHandler: boolean;
     customDirPath?: string;
   };
-  custom?: {
-    useDefaultInteractionEvent?: boolean;
+  custom: {
+    useDefaultInteractionEvent: boolean;
+    useDefaultReloadCommand: boolean;
   };
-  plugin?: {
-    RPGTamer: boolean;
-  }
+  axios: AxiosConfig;
+}
+
+/**
+ * Can set baseURL to null if enabled is false.
+ */
+export interface AxiosConfig {
+  enabled: boolean;
+  defaultTimeout?: number;
+  baseURL: string | any;
+  subURL?: string;
 }
 
 /**
@@ -137,6 +145,12 @@ export interface DiscrafterConfig {
  *   custom: {
  *      useDefaultInteractionEvent: true,
  *   },
+ *   axios: {
+ *      enabled: true,
+ *      defaultTimeout: 5000,
+ *      baseURL: "https://api.example.com",
+ *      subURL: "https://backup-api.example.com"
+ *   }
  * });
  * ```
  */

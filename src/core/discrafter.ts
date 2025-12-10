@@ -1,4 +1,10 @@
-import { Client, Collection, Interaction, MessageFlags, SlashCommandBuilder } from "discord.js";
+import {
+  Client,
+  Collection,
+  Interaction,
+  MessageFlags,
+  SlashCommandBuilder,
+} from "discord.js";
 import { DiscrafterConfig } from "../config/discrafter.config.js";
 import { loadConfig } from "../loaders/config.loader.js";
 import { eventTemplate } from "../template/event.template.js";
@@ -9,6 +15,7 @@ import path from "path";
 import HelperManager from "../handlers/helper.js";
 import { helperTemplate } from "../template/helper.template.js";
 import { ExtendedClient } from "../config/client.type.js";
+import Rheos from "../handlers/Rheos.js";
 
 /**
  * Main Discrafter class for managing Discord bot functionalities.
@@ -17,6 +24,8 @@ class Discrafter {
   private client!: ExtendedClient;
   private discordToken!: string;
   private HandlerCollection: Collection<string, any> = new Collection();
+  private rheosApp!: Rheos;
+  private rheosEnabled: boolean = false;
 
   // Argument parsers for Helper functions
   private typeMap: Record<
@@ -81,8 +90,16 @@ class Discrafter {
     await this.initializeEvents(config);
 
     // 2. Register Runtime Listeners
-    if (config.custom?.useDefaultInteractionEvent) {
+    if (config.custom.useDefaultInteractionEvent) {
       this.registerInteractionListener();
+    }
+
+    // 3. Initialize Rheos if enabled
+    if (config.axios?.enabled) {
+      this.rheosEnabled = true;
+      this.rheosApp = new Rheos(config.axios);
+      this.log("SYS", "Rheos module initialized.");
+      await this.rheosApp.load();
     }
 
     this.log("SYS", "Initialization Complete.");
@@ -102,7 +119,7 @@ class Discrafter {
     // 1. Load Commands from file system
     await manager.init(cmdPath, config.core.clientId, config.core.discordToken);
 
-    if (config.slashCommand.useDefaultReloadCommand) {
+    if (config.custom.useDefaultReloadCommand) {
       const reloadCommand = {
         data: new SlashCommandBuilder()
           .setName("reload_system")
@@ -111,7 +128,7 @@ class Discrafter {
         execute: async (interaction: any) => {
           // Type as any or specific Interaction type
           await interaction.deferReply({
-            flags: MessageFlags.Ephemeral
+            flags: MessageFlags.Ephemeral,
           });
           try {
             await manager.reloadCommands();
@@ -304,6 +321,18 @@ class Discrafter {
     const reset = "\x1b[0m";
     console.log(`${colors[tag]}[${tag}]${reset} ${message}`);
   }
+
+  public executeBulkAxiosCalls = async (priority: number) => {
+    if (!this.rheosEnabled)
+      throw new Error("Rheos module is not enabled in the configuration.");
+    return await this.rheosApp.executeBulkCalls(priority);
+  };
+
+  public executeSingleAxiosCall = async (name: string) => {
+    if (!this.rheosEnabled)
+      throw new Error("Rheos module is not enabled in the configuration.");
+    return await this.rheosApp.executeSingleCall(name);
+  };
 
   public login = () => {
     try {
