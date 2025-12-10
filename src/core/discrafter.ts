@@ -16,6 +16,7 @@ import HelperManager from "../handlers/helper.js";
 import { helperTemplate } from "../template/helper.template.js";
 import { ExtendedClient } from "../config/client.type.js";
 import Rheos from "../handlers/Rheos.js";
+import { AxiosCall } from "../config/Rheos.types.js";
 
 /**
  * Main Discrafter class for managing Discord bot functionalities.
@@ -73,6 +74,17 @@ class Discrafter {
     }
     return config;
   }
+
+   /**
+   * Creates an AxiosCall configuration.
+   * Should be in directory ./src/axiosCalls/
+   * Should have .axios.ts or .axios.js extension.
+   * @param config
+   * @returns
+   */
+  static AxiosCall = (config: AxiosCall) => {
+    return config;
+  };
 
   // ============================= Core Setup ============================== //
 
