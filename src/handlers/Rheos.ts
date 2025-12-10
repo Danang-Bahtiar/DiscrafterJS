@@ -2,8 +2,7 @@ import { glob } from "glob";
 import path from "path";
 import axios from "axios";
 import { AxiosConfig } from "../config/discrafter.config.js";
-import { AxiosCall } from "../config/Rheos.types.js";
-
+import { AxiosCall, AxiosResult } from "../config/Rheos.types.js";
 
 // 🎨 Visual Styling Helpers
 const style = {
@@ -76,6 +75,32 @@ class Rheos {
       );
     }
     return await this.performRequest(callConfig, this.config.baseURL);
+  };
+
+  /**
+   * 🔍 GET CONFIG
+   * Retrieves the static configuration template by name.
+   */
+  public getCallConfig = (name: string): AxiosCall | undefined => {
+    return this.universalMemoria.get(name);
+  };
+
+  /**
+   * 🔍 GET PRIORITY GROUP
+   * Returns all calls associated with a specific priority.
+   */
+  public getPriorityGroup = (
+    priority: number
+  ): Map<string, AxiosCall> | undefined => {
+    return this.RheosMemoria.get(priority);
+  };
+
+  /**
+   * 🛠️ EXECUTE BY CONFIG object
+   * If you manually constructed a config object or heavily modified one.
+   */
+  public executeConfig = async (config: AxiosCall): Promise<AxiosResult> => {
+      return await this.performRequest(config, this.config.baseURL);
   }
 
   /**

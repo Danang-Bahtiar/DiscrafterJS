@@ -103,6 +103,9 @@ class Discrafter {
 
       this.client.executeBulkAxiosCalls = this.executeBulkAxiosCalls;
       this.client.executeSingleAxiosCall = this.executeSingleAxiosCall;
+      this.client.getRheosApp = () => {
+        return this.rheosApp;
+      }
     }
 
     this.log("SYS", "Initialization Complete.");
