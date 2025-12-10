@@ -100,6 +100,9 @@ class Discrafter {
       this.rheosApp = new Rheos(config.axios);
       this.log("SYS", "Rheos module initialized.");
       await this.rheosApp.load();
+
+      this.client.executeBulkAxiosCalls = this.executeBulkAxiosCalls;
+      this.client.executeSingleAxiosCall = this.executeSingleAxiosCall;
     }
 
     this.log("SYS", "Initialization Complete.");
@@ -322,13 +325,13 @@ class Discrafter {
     console.log(`${colors[tag]}[${tag}]${reset} ${message}`);
   }
 
-  public executeBulkAxiosCalls = async (priority: number) => {
+  private executeBulkAxiosCalls = async (priority: number) => {
     if (!this.rheosEnabled)
       throw new Error("Rheos module is not enabled in the configuration.");
     return await this.rheosApp.executeBulkCalls(priority);
   };
 
-  public executeSingleAxiosCall = async (name: string) => {
+  private executeSingleAxiosCall = async (name: string) => {
     if (!this.rheosEnabled)
       throw new Error("Rheos module is not enabled in the configuration.");
     return await this.rheosApp.executeSingleCall(name);
